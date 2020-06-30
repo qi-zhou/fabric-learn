@@ -37,10 +37,10 @@ services:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
       - FABRIC_CA_SERVER_CA_NAME=ca.example.com
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
-      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/4239aa0dcd76daeeb8ba0cda701851d14504d31aad1b2ddddbac6a57365e497c_sk
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/3f11976c88b0fe474f5b167c05570015b52f4bcb7eb76ab2d1222d5fde82e982_sk
     ports:
       - "17054:7054"
-    command: sh -c 'fabric-ca-server start -b admin:adminpw'
+    command: sh -c 'sleep 100000'
     volumes:
       - ./crypto-config/peerOrganizations/org1.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
     container_name: ca.example.com
@@ -266,12 +266,96 @@ services:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
       - FABRIC_CA_SERVER_CA_NAME=Org2ca.example.com
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
-      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/e9b61839a99a99502b822fec82e62d43f976cd03e23118bbedb12f6fc8fff113_sk
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/04d69e87139dc2598f101d2429873adcf82aef9a3f7d963409476a62098d4a12_sk
     ports:
       - "8054:7054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw'
     volumes:
       - ./crypto-config/peerOrganizations/org2.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
     container_name: Org2ca.example.com
+    networks:
+      - basic
+
+  kafkaA.example.com:
+    container_name: kafkaA.example.com
+    image: hyperledger/fabric-kafka
+    restart: always
+    environment:
+      - KAFKA_MESSAGE_MAX_BYTES=103809024
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE=false
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=2
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper1.example.com:2181,zookeeper2.example.com:2181,zookeeper3.example.com:2181
+      - KAFKA_BROKER_ID=1
+    ports:
+      - 9092:9092
+      - 9093:9093
+    networks:
+      - basic
+    depends_on:
+      - zookeeper1.example.com
+      - zookeeper2.example.com
+      - zookeeper3.example.com
+
+  kafkaB.example.com:
+    container_name: kafkaB.example.com
+    image: hyperledger/fabric-kafka
+    restart: always
+    environment:
+      - KAFKA_MESSAGE_MAX_BYTES=103809024
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE=false
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=2
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper1.example.com:2181,zookeeper2.example.com:2181,zookeeper3.example.com:2181
+      - KAFKA_BROKER_ID=2
+    ports:
+      - 10092:9092
+      - 10093:9093
+    networks:
+      - basic
+    depends_on:
+      - zookeeper1.example.com
+      - zookeeper2.example.com
+      - zookeeper3.example.com
+
+# -----------------------------------
+  zookeeper1.example.com:
+    container_name: zookeeper1.example.com
+    image: hyperledger/fabric-zookeeper
+    environment:
+      - ZOO_MY_ID=1
+      - ZOO_SERVERS=server.1=zookeeper1.example.com:2888:3888 server.2=zookeeper2.example.com:288:3888 server.3=zookeeper3.example.com:2888:3888
+    ports:
+      - 2181:2181
+      - 2888:2888
+      - 3888:3888
+    networks:
+      - basic
+
+  zookeeper2.example.com:
+    container_name: zookeeper2.example.com
+    image: hyperledger/fabric-zookeeper
+    environment:
+      - ZOO_MY_ID=2
+      - ZOO_SERVERS=server.1=zookeeper1.example.com:2888:3888 server.2=zookeeper2.example.com:2888:3888 server.3=zookeeper3.example.com:2888:3888
+    ports:
+      - 12181:2181
+      - 12888:2888
+      - 13888:3888
+    networks:
+      - basic
+
+  zookeeper3.example.com:
+    container_name: zookeeper3.example.com
+    image: hyperledger/fabric-zookeeper
+    environment:
+      - ZOO_MY_ID=3
+      - ZOO_SERVERS=server.1=zookeeper1.example.com:2888:3888 server.2=zookeeper2.example.com:2888:3888 server.3=zookeeper3.example.com:2888:3888
+    ports:
+      - 22181:2181
+      - 22888:2888
+      - 23888:3888
     networks:
       - basic
